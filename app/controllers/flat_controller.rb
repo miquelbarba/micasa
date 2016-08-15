@@ -20,6 +20,7 @@ class FlatController < ApplicationController
     @flats ||= begin
       scope = Flat.order(order_by)
       scope = add_condition(scope, 'neighbourhood', '=', params[:neighbourhood])
+      scope = add_condition(scope, 'conservation', '=', params[:conservation])
       scope = add_condition(scope, 'postal_code', '=', params[:postal_code])
       scope = add_condition(scope, 'price', params[:price_op], params[:price])
       scope = add_condition(scope, 'floor', params[:floor_op], params[:floor])
