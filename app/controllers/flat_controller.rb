@@ -19,7 +19,8 @@ class FlatController < ApplicationController
   def flats
     @flats ||= begin
       scope = Flat.order(order_by)
-      scope = add_condition(scope, 'neighbourhood', '=', params[:neighbourhood])
+      neighbourhood = params[:neighbourhood].presence ? "bcn-#{params[:neighbourhood]}" : nil
+      scope = add_condition(scope, 'neighbourhood', '=', neighbourhood)
       scope = add_condition(scope, 'conservation', '=', params[:conservation])
       scope = add_condition(scope, 'postal_code', '=', params[:postal_code])
       scope = add_condition(scope, 'price', params[:price_op], params[:price])
@@ -39,7 +40,8 @@ class FlatController < ApplicationController
   end
 
   def neighbourhoods
-    Flat.select(:neighbourhood).distinct.map(&:neighbourhood).compact.sort
+    Flat.select(:neighbourhood).distinct.map(&:neighbourhood).compact
+        .map { |s| s[4..-1] }.sort
   end
 
   def postal_codes
