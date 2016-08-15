@@ -11,8 +11,8 @@ class FlatController < ApplicationController
                              postal_codes: postal_codes,
                              operators: operators,
                              floors: floors,
-                             rooms: rooms }
-    puts "next: #{next_page} p #{previous_page}"
+                             rooms: rooms,
+                             conservations: conservations }
   end
 
   private
@@ -53,6 +53,10 @@ class FlatController < ApplicationController
     Flat.select(:rooms).distinct.map(&:rooms).compact.sort
   end
 
+  def conservations
+    Flat.select(:conservation).distinct.map(&:conservation).compact.sort
+  end
+
   def operators
     %w(<= = >=)
   end
@@ -71,7 +75,7 @@ class FlatController < ApplicationController
 
   def headers
     data = [['neighbourhood', 200], ['postal_code', 60], ['price', 60], ['floor', 60],
-            ['rooms', 60], ['sq_meters', 60], ['price_sq_meter', 60]]
+            ['rooms', 60], ['sq_meters', 60], ['price_sq_meter', 60], ['conservation', 60]]
     data.map do |field, width|
       [field, field, next_order(field), width]
     end

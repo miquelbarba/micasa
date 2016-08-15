@@ -62,6 +62,7 @@
         <%= select_tag(:price_sq_meter_op, options_for_select(operators, params[:price_sq_meter_op]), options.dup) %>
         <%= select_tag(:price_sq_meter, options_for_select(%w(1000 2000 3000 4000 5000), params[:price_sq_meter]), options.dup) %>
       </td>
+      <td><%= select_tag(:conservation, options_for_select(conservations, params[:conservations]), options.dup) %></td>
       <td><%= "#{count}/#{Flat.count}" %></td>
     </tr>
 
@@ -80,6 +81,7 @@
       <td> <%= flat.rooms %> </td>
       <td> <%= flat.sq_meters %> </td>
       <td> <%= flat.price_sq_meter %> </td>
+      <td> <%= flat.conservation %> </td>
       <td> <%= link_to('image', flat.image_url, target: '_blank') %> </td>
       <td> <%= link_to('open', flat.url, target: '_blank') %> </td>
       <td> <%= flat.title[0..50] %> </td>
