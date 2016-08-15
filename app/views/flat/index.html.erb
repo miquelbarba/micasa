@@ -1,0 +1,95 @@
+<script>
+  function next()
+  {
+    $('#page').val('<%=next_page%>');
+    $('#aform').submit();
+  }
+
+  function previous()
+  {
+    $('#page').val('<%=previous_page%>');
+    $('#aform').submit()
+  }
+
+  jQuery(function($) {
+    $("th").click(function() {
+      $('#order_field').val($(this).data('field'));
+      $('#order_sort').val($(this).data('sort'));
+      $('#aform').submit()
+    });
+  });
+</script>
+
+<table>
+  <colgroup>
+    <% headers.each_with_index do |_, i| %>
+        <col class="<%= i % 2 == 0 ? 'white' : 'grey' %>" />
+    <% end %>
+  </colgroup>
+
+  <tr>
+  <% headers.each do |field, text, sort, width| %>
+    <th style="text-align: left;" data-field="<%=field%>"
+        data-sort="<%=sort%>" witdh="<%=width%>"><%=text%></th>
+  <% end %>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+  <%= form_tag(root_path, method: 'get', id: 'aform') do %>
+    <% options = { include_blank: true, onchange: "$('#aform').submit()" } %>
+    <tr>
+      <td><%= select_tag(:neighbourhood, options_for_select(neighbourhoods, params[:neighbourhood]), options.dup) %></td>
+      <td><%= select_tag(:postal_code, options_for_select(postal_codes, params[:postal_code]), options.dup) %></td>
+      <td>
+        <%= select_tag(:price_op, options_for_select(operators, params[:price_op]), options.dup) %>
+        <%= select_tag(:price,  options_for_select(%w(150000 200000 250000 300000 350000 400000 450000), params[:price]), options.dup) %>
+      </td>
+      <td>
+        <%= select_tag(:floor_op, options_for_select(operators, params[:floor_op]), options.dup) %>
+        <%= select_tag(:floor, options_for_select(floors, params[:floor]), options.dup) %>
+      </td>
+      <td>
+        <%= select_tag(:rooms_op, options_for_select(operators, params[:rooms_op]), options.dup) %>
+        <%= select_tag(:rooms, options_for_select(rooms, params[:rooms]), options.dup) %>
+      </td>
+      <td>
+        <%= select_tag(:sq_meters_op, options_for_select(operators, params[:sq_meters_op]), options.dup) %>
+        <%= select_tag(:sq_meters, options_for_select(%w(40 50 60 70 90 100 110 120), params[:sq_meters]), options.dup) %>
+      </td>
+      <td>
+        <%= select_tag(:price_sq_meter_op, options_for_select(operators, params[:price_sq_meter_op]), options.dup) %>
+        <%= select_tag(:price_sq_meter, options_for_select(%w(1000 2000 3000 4000 5000), params[:price_sq_meter]), options.dup) %>
+      </td>
+      <td><%= "#{count}/#{Flat.count}" %></td>
+    </tr>
+
+    <%= hidden_field_tag(:order_field) %>
+    <%= hidden_field_tag(:order_sort) %>
+    <%= hidden_field_tag(:page, page) %>
+  <% end %>
+
+
+  <% flats.each do |flat| %>
+    <tr>
+      <td> <%= flat.neighbourhood %> </td>
+      <td> <%= flat.postal_code %> </td>
+      <td> <%= flat.price %> </td>
+      <td> <%= flat.floor %> </td>
+      <td> <%= flat.rooms %> </td>
+      <td> <%= flat.sq_meters %> </td>
+      <td> <%= flat.price_sq_meter %> </td>
+      <td> <%= link_to('image', flat.image_url, target: '_blank') %> </td>
+      <td> <%= link_to('open', flat.url, target: '_blank') %> </td>
+      <td> <%= flat.title[0..50] %> </td>
+    </tr>
+  <% end %>
+</table>
+<% if previous_page %>
+  <%= link_to 'Previous Page', '', onclick: "previous(); return false;" %>
+<% end %>
+<mspace></mspace>
+<% if next_page %>
+  <%= link_to 'Next Page', '', onclick: "next(); return false;" %>
+<% end %>
