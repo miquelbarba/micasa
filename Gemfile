@@ -2,6 +2,8 @@ source 'https://rubygems.org'
 
 gem 'sqlite3'
 gem 'kaminari'
+gem 'execjs'
+gem 'therubyracer', :platforms => :ruby
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 5.0.0'
