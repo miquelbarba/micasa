@@ -5,71 +5,71 @@ require 'json'
 url = 'http://www.fotocasa.es/comprar/pisos/barcelona-capital/listado?crp=1&llm=724,9,8,232,376,8019,0,0,0&bsm=1&opi=1&ftg=false&pgg=false&odg=false&fav=false&grad=false&fss=true&mode=3&cu=es-es&nhtti=1&craap=1&fss=true'
 url = 'http://www.fotocasa.es/comprar/pisos/barcelona-capital/listado'
 opts = {
-    storage: Anemone::Storage.SQLite3(),
-    threads: 1,
-    delay: 1,
-    verbose: true,
-    user_agent: "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0"
+  storage: Anemone::Storage.SQLite3(),
+  threads: 1,
+  delay: 1,
+  verbose: true,
+  user_agent: "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0"
 }
 Anemone.crawl(url, opts) do |anemone|
-  #anemone.on_every_page { |page| puts page.url }
+  anemone.on_every_page { STDOUT.flush }
 
   anemone.on_pages_like /vivienda\/barcelona-capital/ do |page|
-    doc = page.doc
-    floor = doc.xpath("//*[@id='litFloor']")&.first&.children&.first&.text&.strip
-    rooms = doc.xpath("//*[@id='litRooms']")&.first&.children&.first&.text&.strip
-    baths = doc.xpath("//*[@id='litBaths']")&.first&.children&.first&.text&.strip
-    surface = doc.xpath("//*[@id='litSurface']")&.first&.children&.first&.text&.strip
-    price = doc.xpath("//*[@id='priceContainer']")&.first&.children&.first&.text&.strip
-    neighbour = doc.xpath("//*[@class='detail-section-content']")&.first&.children&.first&.text&.strip
+    begin
+      doc = page.doc
+      floor = doc.xpath("//*[@id='litFloor']")&.first&.children&.first&.text&.strip
+      baths = doc.xpath("//*[@id='litBaths']")&.first&.children&.first&.text&.strip
+      text = doc.xpath("//script[@type='text/javascript']").select {|node| node && node.text.index("Ads:")}.first.text
+      json = text.strip[53..-3]
+      data = JSON.parse(json)
 
-    text = doc.xpath("//script[@type='text/javascript']").select {|node| node && node.text.index("Ads:")}.first.text
-    json = text.strip[53..-3]
-    data = JSON.parse(json)
+      external_id = data['oasDetailid']
+      price = data['oasPrice'].presence
+      if (external_id && (flat = Flat.find_by_external_id(external_id)))
+        flat.last_visit = DateTime.now
+        if (price && flat.price && flat.price.to_s != price.to_s)
+          puts "NEW price #{price} - #{flat.price}"
+          Price.create(price: flat.price, flat: flat)
+          flat.price = price
+        end
+        flat.save
 
-    external_id = data['oasDetailid']
-    price = data['oasPrice'].presence
-    if (external_id && (flat = Flat.find_by_external_id(external_id)))
-      flat.last_visit = DateTime.now
-      if (price && flat.price && flat.price.to_s != price.to_s)
-        puts "NEW price #{price} - #{flat.price}"
-        Price.create(price: flat.price, flat: flat)
-        flat.price = price
+        puts "UPDATE #{external_id}"
+      else
+        title = doc.xpath("//*[@class='property-title']")&.first&.children&.first&.text&.strip
+        keys = %w(Neighbourhood oasPrice oasGeoPostalCode oasSqmetres Conservation)
+        puts keys.map { |key| "#{key}: #{data[key]}" }.join(' ')
+
+        postal_code = data['oasGeoPostalCode'].presence
+        sq_meters = data['oasSqmetres'].presence
+        flat = Flat.create(title: title.presence,
+                           neighbourhood: data['Neighbourhood'].presence,
+                           district: data['District'].presence,
+                           price: price,
+                           postal_code: postal_code.size == 4 ? "0#{postal_code}" : postal_code,
+                           rooms: data['oasNumRooms'].presence,
+                           baths: baths.presence,
+                           sq_meters: sq_meters,
+                           conservation: data['Conservation'].presence,
+                           floor: floor.presence,
+                           lat: data['Lat'].presence,
+                           lng: data['Lng'].presence,
+                           url: page.url,
+                           external_id: external_id,
+                           last_visit: DateTime.now,
+                           json: json,
+                           image_url: data['urlp'],
+                           portal: 'fotocasa',
+                           price_sq_meter: price && sq_meters ? price.to_i / sq_meters.to_i : nil)
+
+        if (values = data['PropertyFeature'])
+          features = values.split('|').map(&:presence).compact.uniq
+          features.each { |name| Tag.create(name: name, flat: flat) }
+        end
       end
-      flat.save
-
-      puts "UPDATE #{external_id}"
-    else
-      title = doc.xpath("//*[@class='property-title']")&.first&.children&.first&.text&.strip
-      keys = %w(Neighbourhood oasPrice oasGeoPostalCode oasSqmetres Conservation)
-      puts keys.map { |key| "#{key}: #{data[key]}" }.join(' ')
-
-      postal_code = data['oasGeoPostalCode'].presence
-      sq_meters = data['oasSqmetres'].presence
-      flat = Flat.create(title: title.presence,
-                         neighbourhood: data['Neighbourhood'].presence,
-                         district: data['District'].presence,
-                         price: price,
-                         postal_code: postal_code.size == 4 ? "0#{postal_code}" : postal_code,
-                         rooms: data['oasNumRooms'].presence,
-                         baths: baths.presence,
-                         sq_meters: sq_meters,
-                         conservation: data['Conservation'].presence,
-                         floor: floor.presence,
-                         lat: data['Lat'].presence,
-                         lng: data['Lng'].presence,
-                         url: page.url,
-                         external_id: external_id,
-                         last_visit: DateTime.now,
-                         json: json,
-                         image_url: data['urlp'],
-                         portal: 'fotocasa',
-                         price_sq_meter: price && sq_meters ? price.to_i / sq_meters.to_i : nil)
-
-      if (values = data['PropertyFeature'])
-        features = values.split('|').map(&:presence).compact.uniq
-        features.each { |name| Tag.create(name: name, flat: flat) }
-      end
+    rescue
+      puts $!.message
+      puts $!.backtrace
     end
   end
 
@@ -108,8 +108,9 @@ end
 # "oasSqmetres"=>"63", "oasEnergeticCert"=>"6", "oasAntiquity"=>"0",
 # "oasState"=>",2,", "oasStateStr"=>",muy-bien,", "Conservation"=>"muy-bien",
 # ""=>"2", "oasCategory"=>"1"}
-
+=begin
 require 'json'
 res = Flat.all.map do |f|
   JSON.parse(f.json)&.keys if f.json
 end.compact.flatten.uniq
+=end
