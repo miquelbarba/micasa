@@ -77,7 +77,8 @@
 
   <% flats.each do |flat| %>
     <tr>
-      <td> <%= link_to(flat.neighbourhood, flat.url, target: '_blank') %> </td>
+      <td> <%= link_to(flat.neighbourhood.presence ? flat.neighbourhood : 'Sin datos',
+                       flat.url, target: '_blank') %> </td>
       <td> <%= flat.price %> </td>
       <td> <%= flat.floor %> </td>
       <td> <%= flat.rooms %> </td>
