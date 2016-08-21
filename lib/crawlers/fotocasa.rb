@@ -31,11 +31,13 @@ Anemone.crawl(url, opts) do |anemone|
     price = data['oasPrice'].presence
     if (external_id && (flat = Flat.find_by_external_id(external_id)))
       flat.last_visit = DateTime.now
+      if (price && flat.price && flat.price.to_s != price.to_s)
+        puts "NEW price #{price} - #{flat.price}"
+        Price.create(price: flat.price, flat: flat)
+        flat.price = price
+      end
       flat.save
 
-      if (price && flat.price != price)
-        Price.create(price: price, flat: flat)
-      end
       puts "UPDATE #{external_id}"
     else
       title = doc.xpath("//*[@class='property-title']")&.first&.children&.first&.text&.strip
