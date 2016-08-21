@@ -4,6 +4,7 @@ gem 'sqlite3'
 gem 'kaminari'
 gem 'execjs'
 gem 'therubyracer', :platforms => :ruby
+gem 'whenever', :require => false
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 5.0.0'

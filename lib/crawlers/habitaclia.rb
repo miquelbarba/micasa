@@ -2,14 +2,15 @@ require 'anemone'
 require 'json'
 
 module Crawlers
-  class Idealista
+  class Habitaclia
+    PLANTA = 'de planta: '
 
     def children_text(doc, xpath)
       doc.xpath(xpath)&.children&.text&.strip&.presence
     end
 
     def call
-      url = 'https://www.idealista.com/venta-viviendas/barcelona-barcelona/'
+      url = 'http://www.habitaclia.com/viviendas-barcelona.htm'
       opts = {
         storage: Anemone::Storage.SQLite3(),
         threads: 1,
@@ -20,22 +21,27 @@ module Crawlers
       Anemone.crawl(url, opts) do |anemone|
         anemone.on_every_page { STDOUT.flush }
 
-        anemone.on_pages_like /\/inmueble\// do |page|
+        anemone.on_pages_like /habitaclia\.com\/comprar-/ do |page|
           begin
             doc = page.doc
+            price = children_text(doc, '//*[@id="inificha"]/div/ul/li[5]')&.remove('.')&.split(' ')&.first
+            sq_meters = children_text(doc, '//*[@id="inificha"]/div/ul/li[1]/span')
+            rooms = children_text(doc, '//*[@id="inificha"]/div/ul/li[2]/span')
+            doc_text = doc.to_s
+            if (planta = doc_text.index(PLANTA))
+              floor = doc_text[planta + PLANTA.size, 2].to_i
+            else
+              floor = nil
+            end
 
-            price = children_text(doc, '//*[@id="main-info"]/div[1]/span[1]/span')&.remove('.')
-            sq_meters = children_text(doc, '//*[@id="main-info"]/div[1]/span[2]/span')
-            rooms = children_text(doc, '//*[@id="main-info"]/div[1]/span[3]/span')
-            floor = children_text(doc, '//*[@id="main-info"]/div[1]/span[4]/span[1]')
-            neighbour = children_text(doc, '//*[@id="addressPromo"]/ul/li[2]')
-            district = children_text(doc, '//*[@id="addressPromo"]/ul/li[3]')
-            baths = children_text(doc, '//*[@id="details"]/div[4]/ul/li[3]')
+            neighbour = children_text(doc, '//*[@id="idVerMapaZona"]')
+            district = nil
+            baths = children_text(doc, '//*[@id="inificha"]/div/ul/li[3]/span')
 
-            url = page.url.to_s
-            external_id =  URI.parse(url).path.split('/').last
+            url = page.url
+            external_id =  url.path.split('-').last.split('.').first
             last_visit = DateTime.now
-            portal = 'idealista'
+            portal = 'habitaclia'
             price_sq_meter = price && sq_meters ? price.to_i / sq_meters.to_i : nil
 
             if (external_id && (flat = Flat.find_by_external_id(external_id)))
@@ -50,19 +56,10 @@ module Crawlers
               puts "UPDATE #{external_id}"
             else
               doc_text = doc.to_s
-              conservation = if doc_text.index('para reformar')
-                               'a-reformar'
-                             elsif doc_text.index('buen estado')
-                               'bien'
-                             elsif doc_text.index('Edificio de nueva planta')
-                               'reformado'
-                             else
-                               'sin-estado'
-                             end
-
-              title = children_text(doc, '//*[@id="main-info"]/h1/span')
-              image_url = if (attrs = doc.xpath('//*[@id="main-multimedia"]/div[2]/img')&.first&.attributes)
-                            attrs['data-service']&.value
+              conservation = 'sin-estado'
+              title = children_text(doc, '//*[@id="inificha"]/div/h1')
+              image_url = if (attrs = doc.xpath('//*[@id="fotoficha"]')&.children&.first&.attributes)
+                            attrs['url']&.value
                           else
                             nil
                           end
@@ -74,10 +71,10 @@ module Crawlers
                                  price: price,
                                  postal_code: nil,
                                  rooms: rooms,
-                                 baths: baths ? baths.remove('wc').strip : nil,
+                                 baths: baths,
                                  sq_meters: sq_meters,
                                  conservation: conservation,
-                                 floor: floor ? floor.remove('º').remove('ª') : nil,
+                                 floor: floor,
                                  lat: nil,
                                  lng: nil,
                                  url: page.url,
@@ -96,20 +93,15 @@ module Crawlers
 
         anemone.focus_crawl do |page|
           page.links.map do |link|
-            if link.to_s =~ /com\/venta-viviendas\/barcelona-barcelona\/pagina/ ||
-               link.to_s =~ /com\/inmueble\//
+            if link.to_s =~ /habitaclia\.com\/viviendas-barcelona/ ||
+               link.to_s =~ /habitaclia\.com\/comprar-/
               link.query = nil
               link
             end
           end.compact.uniq
         end
 
-        anemone.skip_links_like /idealista\.com\/fr\//,
-                                /idealista\.com\/de\//,
-                                /idealista\.com\/it\//,
-                                /idealista\.com\/pt\//,
-                                /idealista\.com\/ca\//,
-                                /idealista\.com\/en\//
+        #anemone.skip_links_like /fotocasa\.es\/ca\//
       end
     end
   end
