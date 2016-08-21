@@ -34,14 +34,12 @@
   <% end %>
     <th></th>
     <th></th>
-    <th></th>
   </tr>
 
   <%= form_tag(root_path, method: 'get', id: 'aform') do %>
     <% options = { include_blank: true, onchange: "$('#aform').submit()" } %>
     <tr>
       <td><%= select_tag(:neighbourhood, options_for_select(neighbourhoods, params[:neighbourhood]), options.dup) %></td>
-      <td><%= select_tag(:postal_code, options_for_select(postal_codes, params[:postal_code]), options.dup) %></td>
       <td>
         <%= select_tag(:price_op, options_for_select(operators, params[:price_op]), options.dup) %>
         <%= select_tag(:price,  options_for_select(%w(150000 200000 250000 300000 350000 400000 450000), params[:price]), options.dup) %>
@@ -63,7 +61,12 @@
         <%= select_tag(:price_sq_meter, options_for_select(%w(1000 2000 3000 4000 5000), params[:price_sq_meter]), options.dup) %>
       </td>
       <td><%= select_tag(:conservation, options_for_select(conservations, params[:conservation]), options.dup) %></td>
-      <td><%= "#{count}/#{Flat.count}" %></td>
+      <td>
+        <%= select_tag(:created_at_op, options_for_select(operators, params[:created_at_op]), options.dup) %>
+        <%= select_tag(:created_at, options_for_select(created_at, params[:created_at]), options.dup) %>
+      </td>
+      <td><%= "#{count}/#{total_count}" %></td>
+      <td><%= select_tag(:portals, options_for_select(portals, params[:portals] || portals.first), { onchange: "$('#aform').submit()" }) %></td>
     </tr>
 
     <%= hidden_field_tag(:order_field) %>
@@ -74,16 +77,15 @@
 
   <% flats.each do |flat| %>
     <tr>
-      <td> <%= flat.neighbourhood[4..-1] %> </td>
-      <td> <%= flat.postal_code %> </td>
+      <td> <%= link_to(flat.neighbourhood, flat.url, target: '_blank') %> </td>
       <td> <%= flat.price %> </td>
       <td> <%= flat.floor %> </td>
       <td> <%= flat.rooms %> </td>
       <td> <%= flat.sq_meters %> </td>
       <td> <%= flat.price_sq_meter %> </td>
       <td> <%= flat.conservation %> </td>
+      <td> <%= flat.created_at.to_date %> </td>
       <td> <%= link_to('image', flat.image_url, target: '_blank') %> </td>
-      <td> <%= link_to('open', flat.url, target: '_blank') %> </td>
       <td> <%= flat.title[8..40] %> </td>
     </tr>
   <% end %>

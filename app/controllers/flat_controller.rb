@@ -12,21 +12,25 @@ class FlatController < ApplicationController
                              operators: operators,
                              floors: floors,
                              rooms: rooms,
-                             conservations: conservations }
+                             created_at: created_at,
+                             portals: portals,
+                             conservations: conservations,
+                             total_count: total_count}
   end
 
   private
   def flats
     @flats ||= begin
       scope = Flat.order(order_by)
-      neighbourhood = params[:neighbourhood].presence ? "bcn-#{params[:neighbourhood]}" : nil
-      scope = add_condition(scope, 'neighbourhood', '=', neighbourhood)
+      scope = add_condition(scope, 'neighbourhood', '=', params[:neighbourhood])
       scope = add_condition(scope, 'conservation', '=', params[:conservation])
       scope = add_condition(scope, 'postal_code', '=', params[:postal_code])
       scope = add_condition(scope, 'price', params[:price_op], params[:price])
       scope = add_condition(scope, 'floor', params[:floor_op], params[:floor])
       scope = add_condition(scope, 'rooms', params[:rooms_op], params[:rooms])
       scope = add_condition(scope, 'sq_meters', params[:sq_meters_op], params[:sq_meters])
+      scope = add_condition(scope, 'created_at', params[:created_at_op], params[:created_at])
+      scope = add_condition(scope, 'portal', '=', portal)
       add_condition(scope, 'price_sq_meter', params[:price_sq_meter_op], params[:price_sq_meter])
     end
   end
@@ -35,29 +39,49 @@ class FlatController < ApplicationController
     flats.count
   end
 
+  def total_count
+    Flat.where(portal: portal).count
+  end
+
+  def created_at
+    (10.days.ago.to_date..Date.today).to_a
+  end
+
+  def portals
+    Flat.select(:portal).distinct.map(&:portal).compact.sort
+  end
+
   def total
     Flat.count
   end
 
   def neighbourhoods
-    Flat.select(:neighbourhood).distinct.map(&:neighbourhood).compact
-        .map { |s| s[4..-1] }.sort
+    Flat.select(:neighbourhood).where(portal: portal).distinct
+        .map(&:neighbourhood).compact.sort
   end
 
   def postal_codes
-    Flat.select(:postal_code).distinct.map(&:postal_code).compact.sort
+    Flat.select(:postal_code).where(portal: portal)
+        .distinct.map(&:postal_code).compact.sort
   end
 
   def floors
-    Flat.select(:floor).distinct.map(&:floor).compact.sort
+    Flat.select(:floor).where(portal: portal)
+        .distinct.map(&:floor).compact.sort
   end
 
   def rooms
-    Flat.select(:rooms).distinct.map(&:rooms).compact.sort
+    Flat.select(:rooms).where(portal: portal)
+        .distinct.map(&:rooms).compact.sort
   end
 
   def conservations
-    Flat.select(:conservation).distinct.map(&:conservation).compact.sort
+    Flat.select(:conservation).where(portal: portal)
+        .distinct.map(&:conservation).compact.sort
+  end
+
+  def portal
+    params[:portal] || portals.first
   end
 
   def operators
@@ -77,8 +101,9 @@ class FlatController < ApplicationController
   end
 
   def headers
-    data = [['neighbourhood', 200], ['postal_code', 60], ['price', 60], ['floor', 60],
-            ['rooms', 60], ['sq_meters', 60], ['price_sq_meter', 60], ['conservation', 60]]
+    data = [['neighbourhood', 200], ['price', 60], ['floor', 60], ['rooms', 60],
+            ['sq_meters', 60], ['price_sq_meter', 60], ['conservation', 60],
+            ['created_at', 60]]
     data.map do |field, width|
       [field, field, next_order(field), width]
     end
