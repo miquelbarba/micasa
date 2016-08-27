@@ -81,7 +81,8 @@ module Crawlers
               link.query = nil
               link
             elsif link.to_s =~ /es\/comprar\/pisos\/barcelona-capital/ &&
-                  !(link.to_s =~ /comprar\/pisos\/barcelona-capital\/.*\/.*\/listado/)
+                  !(link.to_s =~ /comprar\/pisos\/barcelona-capital\/.*\/.*\/listado/) &&
+                  !(link.to_s =~ /comprar\/pisos\/barcelona-capital\/.*\/listado/)
               link
             end
           end.compact.uniq
