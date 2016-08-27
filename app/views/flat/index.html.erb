@@ -87,7 +87,7 @@
       <td> <%= flat.conservation %> </td>
       <td> <%= flat.created_at.to_date %> </td>
       <td> <%= link_to('image', flat.image_url, target: '_blank') %> </td>
-      <td> <%= flat.title[8..40] %> </td>
+      <td> <%= flat.title ? flat.title[8..40] : nil %> </td>
     </tr>
   <% end %>
 </table>
