@@ -21,3 +21,7 @@
 every(:tuesday, at: '23h') { rake 'micasa:fotocasa' }
 every(:wednesday, at: '23h') { rake 'micasa:idealista' }
 every(:thursday, at: '23h') { rake 'micasa:habitaclia' }
+every(:friday, at: '23h') { rake 'micasa:ya_encontre' }
+every(:saturday, at: '23h') { rake 'micasa:fotocasa' }
+every(:sunday, at: '23h') { rake 'micasa:idealista' }
+every(:monday, at: '23h') { rake 'micasa:habitaclia' }

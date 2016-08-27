@@ -1,6 +1,7 @@
 require 'crawlers/fotocasa'
 require 'crawlers/habitaclia'
 require 'crawlers/idealista'
+require 'crawlers/ya_encontre'
 
 namespace :micasa do
   task fotocasa: :environment do
@@ -16,6 +17,11 @@ namespace :micasa do
   task habitaclia: :environment do
     delete_db
     Crawlers::Habitaclia.new.call
+  end
+
+  task ya_encontre: :environment do
+    delete_db
+    Crawlers::YaEncontre.new.call
   end
 
   def delete_db
