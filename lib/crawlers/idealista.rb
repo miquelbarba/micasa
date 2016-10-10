@@ -27,10 +27,10 @@ module Crawlers
             price = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[1]/span')&.remove('.')
             sq_meters = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[2]/span')
             rooms = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[3]/span')
-            floor = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[4]/span[1]').remove('ª').remove('º')
+            floor = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[4]/span[1]')&.remove('ª')&.remove('º')&.strip
             neighbour = children_text(doc, '//*[@id="addressPromo"]/ul/li[2]')
             district = children_text(doc, '//*[@id="addressPromo"]/ul/li[3]')
-            baths = children_text(doc, '//*[@id="details"]/div[4]/ul/li[3]').remove('wc').strip
+            baths = children_text(doc, '//*[@id="details"]/div[4]/ul/li[3]')&.remove('wc')&.strip
 
             url = page.url.to_s
             external_id =  URI.parse(url).path.split('/').last
@@ -60,7 +60,7 @@ module Crawlers
                                'sin-estado'
                              end
 
-              title = children_text(doc, '//*[@id="main-info"]/h1/span')
+              title = children_text(doc, '//*[@id="main"]/div/div/section/h1/span')
               image_url = if (attrs = doc.xpath('//*[@id="main-multimedia"]/div[2]/img')&.first&.attributes)
                             attrs['data-service']&.value
                           else
