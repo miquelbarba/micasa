@@ -24,13 +24,13 @@ module Crawlers
           begin
             doc = page.doc
 
-            price = children_text(doc, '//*[@id="main-info"]/div[1]/span[1]/span')&.remove('.')
-            sq_meters = children_text(doc, '//*[@id="main-info"]/div[1]/span[2]/span')
-            rooms = children_text(doc, '//*[@id="main-info"]/div[1]/span[3]/span')
-            floor = children_text(doc, '//*[@id="main-info"]/div[1]/span[4]/span[1]')
+            price = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[1]/span')&.remove('.')
+            sq_meters = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[2]/span')
+            rooms = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[3]/span')
+            floor = children_text(doc, '//*[@id="main"]/div/div/section/div[1]/span[4]/span[1]').remove('ª').remove('º')
             neighbour = children_text(doc, '//*[@id="addressPromo"]/ul/li[2]')
             district = children_text(doc, '//*[@id="addressPromo"]/ul/li[3]')
-            baths = children_text(doc, '//*[@id="details"]/div[4]/ul/li[3]')
+            baths = children_text(doc, '//*[@id="details"]/div[4]/ul/li[3]').remove('wc').strip
 
             url = page.url.to_s
             external_id =  URI.parse(url).path.split('/').last
